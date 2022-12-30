@@ -63,7 +63,7 @@ const Dashboard = () => {
   // console.log(signer, provider);
 
   const [currencyID, setCurrencyID] = React.useState("0");
-  const currencyList = ["GODZ", "USD", "EUR"];
+  const currencyList = ["GODZ", "GODZlp"];
 
   const handlestake = () => {
     setstackeStyle("activeoption");
