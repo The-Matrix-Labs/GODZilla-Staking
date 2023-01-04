@@ -13,20 +13,19 @@ import {
   KeyboardArrowDown,
   Info,
 } from "@mui/icons-material";
+import Values from "../../contract/value.json"
+import { stackingabi, tokenabi, erc20ABI } from "../../contract"
 
 const Dashboard = () => {
   const theme = useTheme();
-  const data_hover =
-    "Note - By doing emergency withdraw you will not recieve any reward also extra fees will be deducted.";
+  const data_hover = "Note - By doing emergency withdraw you will not recieve any reward also extra fees will be deducted.";
   const [stackeStyle, setstackeStyle] = useState("activeoption");
   const [unstakeStyle, setunstackeStyle] = useState("inactiveoption");
 
   const [box1_child_style, setbox1ChildStyle] = useState("box1-child");
   const [activeID, setActiveId] = useState(0);
   const [value, setValue] = React.useState(0);
-  const [text, setText] = React.useState(
-    "kjncjksnuh02830bi0x990w83bd8289yuhdieduh"
-  );
+  const [text, setText] = React.useState(Values.tokenaddress);
   var sliderOptionsStyle = [
     "",
     "slider_custom_options-child",
@@ -34,45 +33,66 @@ const Dashboard = () => {
     "slider_custom_options-child",
     "slider_custom_options-child",
   ];
-  // const { data: signer, isError, isLoading } = useSigner();
-  // const provider = useProvider();
-  // const [poolId, setPoolId] = useState(0);
-  // const [poolInfo, setPoolInfo] = useState();
-  // const [userInfo, setUserInfo] = useState();
-  // const [walletAddressInfo, setWalletAddressInfo] = useState();
-  // const [mystakebalance, setMystakeBalance] = useState(0);
-  // const [amount, setAmount] = useState();
-  // const [myaddress, setMyaddress] = useState();
-  // const [locktime, setLockTime] = useState(1);
-  // const [unlockTime, setUnlockTime] = useState(1);
-  // const [emergencyfee, setEmergencyfee] = useState();
-  // const [poolsize, setPoolSize] = useState();
-  // const [maxpool, setMaxPool] = useState(0);
-  // const [reward, setReward] = useState();
-  // const [myTokenBalance, setMyTokenBalance] = useState(0);
-  // const [istokenapproved, settokenapproved] = useState(false);
-  // const [buttonactive1, setButtonactive1] = useState("activebutton");
-  // const [buttonactive2, setButtonactive2] = useState("");
-  // const [buttonactive3, setButtonactive3] = useState("");
-  // const [buttonactive4, setButtonactive4] = useState("");
-  // const [maxtoken, setMaxToken] = useState(0);
-  // const [maxContribution, setMaxContribution] = useState(0);
-  // const [minContribution, setMinContribution] = useState(0);
-  // const [claimableTokens, setClaimableTokens] = useState(0);
-  // const [errors, setError] = useState();
-  // console.log(signer, provider);
+  const { data: signer, isError, isLoading } = useSigner();
+  const provider = useProvider();
 
+  const [setstackamount, setStackamount] = useState(0);
+
+
+  const [poolId, setPoolId] = useState([10]);
+  const [poolInfo, setPoolInfo] = useState();
+  const [userInfo, setUserInfo] = useState();
+  const [walletAddressInfo, setWalletAddressInfo] = useState();
+  const [mystakebalance, setMystakeBalance] = useState(0);
+  const [amount, setAmount] = useState();
+  const [myaddress, setMyaddress] = useState();
+  const [locktime, setLockTime] = useState(0);
+  const [unlockTime, setUnlockTime] = useState(1);
+  const [emergencyfee, setEmergencyfee] = useState();
+  const [poolsize, setPoolSize] = useState();
+  const [maxpool, setMaxPool] = useState(0);
+
+  const [maxpoolunstaked, setMaxPoolunstaked] = useState(0);
+
+  const [reward, setReward] = useState();
+  const [myTokenBalance, setMyTokenBalance] = useState(0);
+  const [istokenapproved, settokenapproved] = useState(false);
+  const [buttonactive1, setButtonactive1] = useState("activebutton");
+  const [buttonactive2, setButtonactive2] = useState(false);
+  const [buttonactive3, setButtonactive3] = useState("");
+  const [buttonactive4, setButtonactive4] = useState("");
+  const [maxtoken, setMaxToken] = useState(0);
+  const [maxContribution, setMaxContribution] = useState(0);
+  const [minContribution, setMinContribution] = useState(0);
+  const [claimableTokens, setClaimableTokens] = useState(0);
+  const [rewardblock, setLastrewardBlock] = useState(0);
+  const [totalstaked, setTotalTokensStaked] = useState(0);
+  const [perblock, setPerblockNumber] = useState(0);
+  const [errors, setError] = useState();
+  const [block, setCurrentblock] = useState(0);
   const [currencyID, setCurrencyID] = React.useState("0");
   const currencyList = ["GODZ", "GODZlp"];
 
   const handlestake = () => {
     setstackeStyle("activeoption");
     setunstackeStyle("inactiveoption");
+    setButtonactive2(false)
   };
 
-  const handleunstake = () => {
+  const handleunstake = async () => {
     setstackeStyle("inactiveoption");
     setunstackeStyle("activeoption");
+    setButtonactive2(true)
+
+    let rpcUrl = Values.rpcURl;
+    let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+    let stake_temp = new ethers.Contract(
+      Values.tokenaddress,
+      tokenabi,
+      provider_
+    );
+    var _poolInfo = await stake_temp.pool();
+    setMaxPoolunstaked(await _poolInfo.totalTokensStaked.toString());
   };
 
   const handleup = () => {
@@ -86,56 +106,145 @@ const Dashboard = () => {
     sliderOptionsStyle[activeID] = "slider_custom_options-child";
     setValue(ID * 25);
     setActiveId(ID);
-
     sliderOptionsStyle[activeID] = "slider_custom_options-child-active";
   };
 
   useEffect(() => {
-    console.log(sliderOptionsStyle);
+    getPoolInfo(); getbalance();
+    //console.log(sliderOptionsStyle);
+
   }, [sliderOptionsStyle]);
-  // async function getPoolInfo() {
-  //   try {
-  //     let rpcUrl = value.rpcURl;
-  //     let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-  //     let stake_temp = new ethers.Contract(
-  //       value.stakingAddress,
-  //       stakingAbi,
-  //       provider_
-  //     );
-  //     var _poolInfo = await stake_temp.poolInfo(poolId);
-  //     console.log("Pool Info: ", _poolInfo);
-  //     console.log("Emergency Fees: ", _poolInfo.emergencyFees.toString());
-  //     const emergencywithdrawfee = await _poolInfo.emergencyFees.toString();
-  //     const currrentpoolsize = await _poolInfo.currentPoolSize.toString();
-  //     const maxcontribution = await _poolInfo.maxContribution.toString();
-  //     const maxcontributionconverted =
-  //       ethers.utils.formatEther(maxcontribution);
-  //     const minicontribution = await _poolInfo.minContribution.toString();
-  //     const minicontributionconverted =
-  //       ethers.utils.formatEther(minicontribution);
-  //     const currrentpoolsizeConverted = Math.floor(
-  //       ethers.utils.formatEther(currrentpoolsize)
-  //     );
-  //     const maxpool = await _poolInfo.maxPoolSize.toString();
-  //     const maxpoolConverted = ethers.utils.formatEther(maxpool);
-  //     const lockDayss = await _poolInfo.lockDays.toString();
-  //     setPoolInfo(_poolInfo);
-  //     setMinContribution(minicontributionconverted);
-  //     setEmergencyfee(emergencywithdrawfee);
-  //     setPoolSize(currrentpoolsizeConverted);
-  //     setLockTime(lockDayss);
-  //     setMaxPool(maxpoolConverted);
-  //     setMaxContribution(maxcontributionconverted);
-  //     console.log("maxpool=>" + maxpoolConverted);
-  //     console.log("current pools=>" + currrentpoolsizeConverted);
-  //   } catch (err) {
-  //     console.log(err.message);
-  //   }
-  // }
+
+
+  async function getPoolInfo() {
+    try {
+
+      let rpcUrl = Values.rpcURl;
+      let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+      let stake_temp = new ethers.Contract(
+        Values.tokenaddress,
+        tokenabi,
+        provider_
+      );
+      var _poolInfo = await stake_temp.pool();
+      console.log("Func", stake_temp);
+      setMaxPool(await _poolInfo.poolRemainingSupply.toString());
+      setLockTime(await _poolInfo.stakeTimeLockSec.toString())
+      setLastrewardBlock(await _poolInfo.lastRewardBlock.toString())
+      setTotalTokensStaked(await _poolInfo.totalTokensStaked.toString())
+      setUnlockTime(await _poolInfo.lockedUntilDate.toString())
+      setMinContribution(await _poolInfo.accERC20PerShare.toString());
+      setMaxContribution(await _poolInfo.stakeTimeLockSec.toString());
+      setPerblockNumber(await _poolInfo.perBlockNum.toString());
+
+
+
+      console.log("pool Info", _poolInfo)
+
+      let block = await stake_temp.getLastStakableBlock()
+      setCurrentblock(block.toString())
+
+      let raww = await stake_temp.getLockedUntilDate()
+      console.log("Valueee---", raww.toString())
+
+      // console.log("Emergency Fees: ", _poolInfo.emergencyFees.toString());
+      // const emergencywithdrawfee = await _poolInfo.emergencyFees.toString();
+      // const currrentpoolsize = await _poolInfo.currentPoolSize.toString();
+
+      // const maxcontribution = await _poolInfo.maxContribution.toString();
+      // const maxcontributionconverted =
+      //   ethers.utils.formatEther(maxcontribution);
+      // const minicontribution = await _poolInfo.minContribution.toString();
+      // const minicontributionconverted =
+      //   ethers.utils.formatEther(minicontribution);
+      // const currrentpoolsizeConverted = Math.floor(
+      //   ethers.utils.formatEther(currrentpoolsize)
+      // );
+      // const maxpool = await _poolInfo.maxPoolSize.toString();
+      // const maxpoolConverted = ethers.utils.formatEther(maxpool);
+      // const lockDayss = await _poolInfo.lockDays.toString();
+      // setPoolInfo(_poolInfo);
+      // setMinContribution(minicontributionconverted);
+      // setEmergencyfee(emergencywithdrawfee);
+      // setPoolSize(currrentpoolsizeConverted);
+      // setMaxContribution(maxcontributionconverted);
+      // console.log("current pools=>" + currrentpoolsizeConverted);
+
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+
+  async function getbalance() {
+    let rpcUrl = Values.rpcURl;
+    let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+    let stake_temp = new ethers.Contract(
+      Values.tokenaddress,
+      tokenabi,
+      provider_
+    );
+    let balance = await stake_temp.balanceOf(signer.getAddress());
+    setWalletAddressInfo(balance.toString())
+  }
+
+  async function emergencywithdraw() {
+    try {
+      const stakeContract = new ethers.Contract(Values.tokenaddress, tokenabi, signer);
+      let stackfunction = await stakeContract.emergencyUnstake();
+      await stackfunction.wait();
+    } catch (stakeContract) {
+      alert(stakeContract.reason)
+    }
+
+  }
+
+  const Startswap = async () => {
+    try {
+      await approve(setstackamount);
+      /*Stacking function start from here */
+      const stakeContract = new ethers.Contract(Values.stackingaddress, tokenabi, signer);
+      let stackfunction = await stakeContract.stakeTokens(setstackamount.toString(), ["1"]);
+      await stackfunction.wait();
+      getPoolInfo();
+      alert("Stacking Succesfully")
+    } catch (stakeContract) {
+      alert(stakeContract.reason)
+    }
+  }
+
+  const approve = async (setstackamount) => {
+    if (setstackamount !== 0) {
+      try {
+        const erc20Contract = new ethers.Contract(Values.tokenaddress, erc20ABI, signer);
+        let stakeapproval = await erc20Contract.approve(Values.stackingaddress, setstackamount.toString());
+        return stakeapproval;
+      } catch (stakeContract) {
+        alert(stakeContract.reason)
+      }
+    } else {
+      alert("Please choose the Stacking amount greater than 0")
+      return false
+    }
+
+  }
+
+  const UnStartswap = async () => {
+    try {
+      const stakeContract = new ethers.Contract(Values.tokenaddress, tokenabi, signer);
+      let _amount = ethers.utils.parseEther(setstackamount.toString());
+      let stackfunction = await stakeContract.unstakeTokens(_amount, false);
+      await stackfunction.wait();
+      getPoolInfo();
+      alert("Stacking Succesfully")
+    } catch (stakeContract) {
+      alert(stakeContract.reason)
+    }
+  }
 
   return (
     <div class="dashboard-root">
       <div class="title">GODZilla Staking Programme</div>
+
       <div class="box1">
         <div class={box1_child_style}>
           <div class="box1-title">You will stake: </div>
@@ -180,13 +289,14 @@ const Dashboard = () => {
               </button>
             </div>
             <div class="info">
-              <div class="info-child-left">Staking Period: 30 Days</div>
-              <div class="info-child-right">Interest Rate: 9.02 PR</div>
+              <div class="info-child-left">Staking Period: {locktime} Seconds</div>
+              <div class="info-child-right">Interest Rate: {minContribution} PR</div>
             </div>
             <div>
               <input
                 type="text"
                 class="amount"
+                onChange={(e) => setStackamount(e.target.value)}
                 placeholder="Enter amount (GODZ)"
               ></input>
             </div>
@@ -253,17 +363,27 @@ const Dashboard = () => {
                 100%
               </button>
             </div>
-
-            <div class="info2">
+            {maxpoolunstaked !== 0 && buttonactive2 === true ? (
+              <div class="info2">
+                <div class="info-child2-left">Available</div>
+                <div class="info-child2-right">{maxpoolunstaked} GODZ</div>
+              </div>
+            ) : <div class="info2">
               <div class="info-child2-left">Available</div>
-              <div class="info-child2-right">100 GODZ</div>
-            </div>
+              <div class="info-child2-right">{maxpool} GODZ</div>
+            </div>}
+
+
 
             <div class="action">
-              <button class="actions-child"> Stake 0 GODZ</button>
+              {!signer && (
+                <ConnectButton class="actions-child" />
+              )}
+              {signer && buttonactive2 === true ? <button class="actions-child" onClick={UnStartswap}> Un Stake token for {setstackamount}</button> : <button class="actions-child" onClick={Startswap}> Stake token for {setstackamount}</button>}
+
             </div>
             <div class="action2">
-              <button class="actions-child2"> Emergency Withdraw</button>
+              <button class="actions-child2" onClick={emergencywithdraw}> Emergency Withdraw</button>
               <div class="hover-text">
                 <Info class="info_icon" />
                 <span class="tooltip-text" id="top">
@@ -276,26 +396,26 @@ const Dashboard = () => {
         <div class="container go-behind">
           <div class="modal">
             <div class="box3-title">
-              <div class="box3-title-content">O GODZ staked</div>
+              <div class="box3-title-content">{totalstaked} GODZ staked</div>
             </div>
             <div class="inner2">
               <div class="d3">
                 <h4 class="d3-child">9.02% APR</h4>
               </div>
               <div class="d4">
-                <div class="stats-values">(0.032 GODZ/block)</div>
-                <div class="stats-values">37,611,661.18 GODZ staked</div>
+                <div class="stats-values">({perblock} GODZ/block)</div>
+                <div class="stats-values">{totalstaked} GODZ staked</div>
               </div>
             </div>
             <div class="footers">Reward</div>
             <hr class="hr" />
             <div class="d3">
-              <h4 class="d3-child">Block: 24434343</h4>
+              <h4 class="d3-child">Block: {rewardblock}</h4>
             </div>
             <div class="d4">
-              <div class="stats-values">[ est Jan 2, 2023, 13:18 ]</div>
+              <div class="stats-values">[ est {unlockTime} ]</div>
             </div>
-            <div class="footers">Expiration</div>
+            <div class="footers">Expiration: {unlockTime} Seconds</div>
             <hr class="hr" />
             <div class="footers">EARNED</div>
             <hr class="hr" />
