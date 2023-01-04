@@ -370,7 +370,7 @@ const Dashboard = () => {
               </div>
             ) : <div class="info2">
               <div class="info-child2-left">Available</div>
-              <div class="info-child2-right">{maxpool} GODZ</div>
+              <div class="info-child2-right">{walletAddressInfo} GODZ</div>
             </div>}
 
 
