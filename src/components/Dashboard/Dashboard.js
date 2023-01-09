@@ -13,31 +13,29 @@ import {
   KeyboardArrowDown,
   Info,
 } from "@mui/icons-material";
-import Values from "../../contract/value.json"
-import { stackingabi, tokenabi, erc20ABI } from "../../contract"
+import Values from "../../contract/value.json";
+import { stackingabi, tokenabi, erc20ABI } from "../../contract";
 
 const Dashboard = () => {
   const theme = useTheme();
-  const data_hover = "Note - By doing emergency withdraw you will not recieve any reward also extra fees will be deducted.";
-  const [stackeStyle, setstackeStyle] = useState("activeoption");
+  const data_hover =
+    "Note - By doing emergency withdraw you will not recieve any reward also extra fees will be deducted.";
+  const [stackeStyle, setstackeStyle] = useState("stake-activeoption");
   const [unstakeStyle, setunstackeStyle] = useState("inactiveoption");
 
   const [box1_child_style, setbox1ChildStyle] = useState("box1-child");
+  const [options_style, setoptionsStyle] = useState("options");
   const [activeID, setActiveId] = useState(0);
   const [value, setValue] = React.useState(0);
+  const [copyActionButtonStyle, setCopyActionButtonStyle] =
+    useState("copyActionButton");
   const [text, setText] = React.useState(Values.tokenaddress);
-  var sliderOptionsStyle = [
-    "",
-    "slider_custom_options-child",
-    "slider_custom_options-child",
-    "slider_custom_options-child",
-    "slider_custom_options-child",
-  ];
+
   const { data: signer, isError, isLoading } = useSigner();
   const provider = useProvider();
+  console.log(signer);
 
   const [setstackamount, setStackamount] = useState(0);
-
 
   const [poolId, setPoolId] = useState([10]);
   const [poolInfo, setPoolInfo] = useState();
@@ -72,17 +70,68 @@ const Dashboard = () => {
   const [block, setCurrentblock] = useState(0);
   const [currencyID, setCurrencyID] = React.useState("0");
   const currencyList = ["GODZ", "GODZlp"];
+  const [optionState, setOptionState] = useState("0");
+  const [bgColor, setBGColor] = useState("sliderBg");
+  const [hoverColor, setHoverColor] = useState("sliderHover");
+  const [sliderOptionsStyle, setSliderOptionsStyle] = useState({
+    0: "",
+    1: "slider_custom_options-child " + hoverColor,
+    2: "slider_custom_options-child " + hoverColor,
+    3: "slider_custom_options-child " + hoverColor,
+    4: "slider_custom_options-child " + hoverColor,
+  });
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopyActionButtonStyle("copyActionButton-active");
+    setTimeout(() => {
+      setCopyActionButtonStyle("copyActionButton");
+    }, 1000);
+    console.log("Copied to clipboard");
+  };
+
+  useEffect(() => {
+    setSliderOptionsStyle({
+      0: "",
+      1: "slider_custom_options-child " + hoverColor,
+      2: "slider_custom_options-child " + hoverColor,
+      3: "slider_custom_options-child " + hoverColor,
+      4: "slider_custom_options-child " + hoverColor,
+    });
+    setValue(0);
+  }, [optionState]);
+
+  useEffect(() => {
+    sliderOptionsStyle[activeID] = "slider_custom_options-child " + hoverColor;
+    setActiveId(value / 25);
+    console.log(value);
+    sliderOptionsStyle[value / 25] =
+      "slider_custom_options-child-active " + bgColor;
+    if (maxpoolunstaked !== 0 && buttonactive2 === true)
+      setStackamount((value * maxpoolunstaked) / 100);
+    else if (walletAddressInfo)
+      setStackamount((value * walletAddressInfo) / 100);
+    else setStackamount(0);
+  }, [value]);
 
   const handlestake = () => {
-    setstackeStyle("activeoption");
+    setstackeStyle("stake-activeoption");
     setunstackeStyle("inactiveoption");
-    setButtonactive2(false)
+    setoptionsStyle("options");
+    setButtonactive2(false);
+    setOptionState(0);
+    setBGColor("");
+    setHoverColor("");
   };
 
   const handleunstake = async () => {
     setstackeStyle("inactiveoption");
-    setunstackeStyle("activeoption");
-    setButtonactive2(true)
+    setunstackeStyle("unstake-activeoption");
+    setButtonactive2(true);
+    setoptionsStyle("options red_border");
+    setOptionState(1);
+    setBGColor("sliderBg-red");
+    setHoverColor("sliderHover-red");
 
     let rpcUrl = Values.rpcURl;
     let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
@@ -102,23 +151,18 @@ const Dashboard = () => {
     setCurrencyID((currencyID - 1 + currencyList.length) % currencyList.length);
   };
 
-  const handleSliderChange = (ID) => {
-    sliderOptionsStyle[activeID] = "slider_custom_options-child";
-    setValue(ID * 25);
-    setActiveId(ID);
-    sliderOptionsStyle[activeID] = "slider_custom_options-child-active";
+  const handleSliderChange = (val) => {
+    setValue(val);
   };
 
   useEffect(() => {
-    getPoolInfo(); getbalance();
+    getPoolInfo();
+    getbalance();
     //console.log(sliderOptionsStyle);
-
   }, [sliderOptionsStyle]);
-
 
   async function getPoolInfo() {
     try {
-
       let rpcUrl = Values.rpcURl;
       let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
       let stake_temp = new ethers.Contract(
@@ -129,23 +173,21 @@ const Dashboard = () => {
       var _poolInfo = await stake_temp.pool();
       console.log("Func", stake_temp);
       setMaxPool(await _poolInfo.poolRemainingSupply.toString());
-      setLockTime(await _poolInfo.stakeTimeLockSec.toString())
-      setLastrewardBlock(await _poolInfo.lastRewardBlock.toString())
-      setTotalTokensStaked(await _poolInfo.totalTokensStaked.toString())
-      setUnlockTime(await _poolInfo.lockedUntilDate.toString())
+      setLockTime(await _poolInfo.stakeTimeLockSec.toString());
+      setLastrewardBlock(await _poolInfo.lastRewardBlock.toString());
+      setTotalTokensStaked(await _poolInfo.totalTokensStaked.toString());
+      setUnlockTime(await _poolInfo.lockedUntilDate.toString());
       setMinContribution(await _poolInfo.accERC20PerShare.toString());
       setMaxContribution(await _poolInfo.stakeTimeLockSec.toString());
       setPerblockNumber(await _poolInfo.perBlockNum.toString());
 
+      console.log("pool Info", _poolInfo);
 
+      let block = await stake_temp.getLastStakableBlock();
+      setCurrentblock(block.toString());
 
-      console.log("pool Info", _poolInfo)
-
-      let block = await stake_temp.getLastStakableBlock()
-      setCurrentblock(block.toString())
-
-      let raww = await stake_temp.getLockedUntilDate()
-      console.log("Valueee---", raww.toString())
+      let raww = await stake_temp.getLockedUntilDate();
+      console.log("Valueee---", raww.toString());
 
       // console.log("Emergency Fees: ", _poolInfo.emergencyFees.toString());
       // const emergencywithdrawfee = await _poolInfo.emergencyFees.toString();
@@ -169,7 +211,6 @@ const Dashboard = () => {
       // setPoolSize(currrentpoolsizeConverted);
       // setMaxContribution(maxcontributionconverted);
       // console.log("current pools=>" + currrentpoolsizeConverted);
-
     } catch (err) {
       console.log(err.message);
     }
@@ -184,66 +225,86 @@ const Dashboard = () => {
       provider_
     );
     let balance = await stake_temp.balanceOf(signer.getAddress());
-    setWalletAddressInfo(balance.toString())
+    setWalletAddressInfo(balance.toString());
   }
 
   async function emergencywithdraw() {
     try {
-      const stakeContract = new ethers.Contract(Values.tokenaddress, tokenabi, signer);
+      const stakeContract = new ethers.Contract(
+        Values.tokenaddress,
+        tokenabi,
+        signer
+      );
       let stackfunction = await stakeContract.emergencyUnstake();
       await stackfunction.wait();
     } catch (stakeContract) {
-      alert(stakeContract.reason)
+      alert(stakeContract.reason);
     }
-
   }
 
   const Startswap = async () => {
     try {
       await approve(setstackamount);
       /*Stacking function start from here */
-      const stakeContract = new ethers.Contract(Values.stackingaddress, tokenabi, signer);
-      let stackfunction = await stakeContract.stakeTokens(setstackamount.toString(), ["1"]);
+      const stakeContract = new ethers.Contract(
+        Values.stackingaddress,
+        tokenabi,
+        signer
+      );
+      let stackfunction = await stakeContract.stakeTokens(
+        setstackamount.toString(),
+        ["1"]
+      );
       await stackfunction.wait();
       getPoolInfo();
-      alert("Stacking Succesfully")
+      alert("Stacking Succesfully");
     } catch (stakeContract) {
-      alert(stakeContract.reason)
+      alert(stakeContract.reason);
     }
-  }
+  };
 
   const approve = async (setstackamount) => {
     if (setstackamount !== 0) {
       try {
-        const erc20Contract = new ethers.Contract(Values.tokenaddress, erc20ABI, signer);
-        let stakeapproval = await erc20Contract.approve(Values.stackingaddress, setstackamount.toString());
+        const erc20Contract = new ethers.Contract(
+          Values.tokenaddress,
+          erc20ABI,
+          signer
+        );
+        let stakeapproval = await erc20Contract.approve(
+          Values.stackingaddress,
+          setstackamount.toString()
+        );
         return stakeapproval;
       } catch (stakeContract) {
-        alert(stakeContract.reason)
+        alert(stakeContract.reason);
       }
     } else {
-      alert("Please choose the Stacking amount greater than 0")
-      return false
+      alert("Please choose the Stacking amount greater than 0");
+      return false;
     }
-
-  }
+  };
 
   const UnStartswap = async () => {
     try {
-      const stakeContract = new ethers.Contract(Values.tokenaddress, tokenabi, signer);
+      const stakeContract = new ethers.Contract(
+        Values.tokenaddress,
+        tokenabi,
+        signer
+      );
       let _amount = ethers.utils.parseEther(setstackamount.toString());
       let stackfunction = await stakeContract.unstakeTokens(_amount, false);
       await stackfunction.wait();
       getPoolInfo();
-      alert("Stacking Succesfully")
+      alert("Stacking Succesfully");
     } catch (stakeContract) {
-      alert(stakeContract.reason)
+      alert(stakeContract.reason);
     }
-  }
+  };
 
   return (
     <div class="dashboard-root">
-      <div class="title">GODZilla Staking Programme</div>
+      <div class="title">GODZilla Staking Program</div>
 
       <div class="box1">
         <div class={box1_child_style}>
@@ -267,12 +328,7 @@ const Dashboard = () => {
             <div class="contractTilte">Farm Contact:</div>
             <div class="contractValue">{text}</div>
           </div>
-          <button
-            class="copyActionButton"
-            onClick={() => {
-              navigator.clipboard.writeText(text);
-            }}
-          >
+          <button class={copyActionButtonStyle} onClick={handleCopy}>
             <ContentCopy />
           </button>
         </div>
@@ -280,7 +336,7 @@ const Dashboard = () => {
       <div className="flex-container">
         <div class="container">
           <div class="modal">
-            <div class="options">
+            <div class={options_style}>
               <button class={stackeStyle} onClick={handlestake}>
                 Stake
               </button>
@@ -289,8 +345,12 @@ const Dashboard = () => {
               </button>
             </div>
             <div class="info">
-              <div class="info-child-left">Staking Period: {locktime} Seconds</div>
-              <div class="info-child-right">Interest Rate: {minContribution} PR</div>
+              <div class="info-child-left">
+                Staking Period: {locktime} Seconds
+              </div>
+              <div class="info-child-right">
+                Interest Rate: {minContribution} PR
+              </div>
             </div>
             <div>
               <input
@@ -303,10 +363,12 @@ const Dashboard = () => {
 
             <Slider
               aria-label="Volume"
-              defaultValue={30}
+              defaultValue={0}
               value={value}
               step={25}
-              onChange={handleSliderChange}
+              onChange={(event, val) => {
+                handleSliderChange(val);
+              }}
               sx={{
                 color:
                   theme.palette.mode === "dark"
@@ -333,7 +395,7 @@ const Dashboard = () => {
               <button
                 class={sliderOptionsStyle[1]}
                 onClick={() => {
-                  handleSliderChange(1);
+                  setValue(25);
                 }}
               >
                 25%
@@ -341,7 +403,7 @@ const Dashboard = () => {
               <button
                 class={sliderOptionsStyle[2]}
                 onClick={() => {
-                  handleSliderChange(2);
+                  setValue(50);
                 }}
               >
                 50%
@@ -349,7 +411,7 @@ const Dashboard = () => {
               <button
                 class={sliderOptionsStyle[3]}
                 onClick={() => {
-                  handleSliderChange(3);
+                  setValue(75);
                 }}
               >
                 75%
@@ -357,7 +419,7 @@ const Dashboard = () => {
               <button
                 class={sliderOptionsStyle[4]}
                 onClick={() => {
-                  handleSliderChange(4);
+                  setValue(100);
                 }}
               >
                 100%
@@ -366,24 +428,43 @@ const Dashboard = () => {
             {maxpoolunstaked !== 0 && buttonactive2 === true ? (
               <div class="info2">
                 <div class="info-child2-left">Available</div>
-                <div class="info-child2-right">{maxpoolunstaked} GODZ</div>
+                <div class="info-child2-right">{maxpoolunstaked || 0} GODZ</div>
               </div>
-            ) : <div class="info2">
-              <div class="info-child2-left">Available</div>
-              <div class="info-child2-right">{walletAddressInfo} GODZ</div>
-            </div>}
-
-
+            ) : (
+              <div class="info2">
+                <div class="info-child2-left">Available</div>
+                <div class="info-child2-right">
+                  {walletAddressInfo || 0} GODZ
+                </div>
+              </div>
+            )}
 
             <div class="action">
-              {!signer && (
-                <ConnectButton class="actions-child" />
+              {!signer ? (
+                <ConnectButton class={"actions-child " + hoverColor} />
+              ) : signer && buttonactive2 === true ? (
+                <button
+                  class={"actions-child " + hoverColor}
+                  onClick={UnStartswap}
+                >
+                  {" "}
+                  Un Stake token for {setstackamount}
+                </button>
+              ) : (
+                <button
+                  class={"actions-child " + hoverColor}
+                  onClick={Startswap}
+                >
+                  {" "}
+                  Stake token for {setstackamount}
+                </button>
               )}
-              {signer && buttonactive2 === true ? <button class="actions-child" onClick={UnStartswap}> Un Stake token for {setstackamount}</button> : <button class="actions-child" onClick={Startswap}> Stake token for {setstackamount}</button>}
-
             </div>
             <div class="action2">
-              <button class="actions-child2" onClick={emergencywithdraw}> Emergency Withdraw</button>
+              <button class="actions-child2" onClick={emergencywithdraw}>
+                {" "}
+                Emergency Withdraw
+              </button>
               <div class="hover-text">
                 <Info class="info_icon" />
                 <span class="tooltip-text" id="top">
@@ -418,7 +499,13 @@ const Dashboard = () => {
             <div class="footers">Expiration: {unlockTime} Seconds</div>
             <hr class="hr" />
             <div class="footers">EARNED</div>
-            <hr class="hr" />
+            <div class="dashed_line">
+              <hr class="dashed_line-child"></hr>
+              <hr class="dashed_line-child"></hr>
+              <hr class="dashed_line-child"></hr>
+              <hr class="dashed_line-child"></hr>
+              <hr class="dashed_line-child"></hr>
+            </div>
           </div>
         </div>
       </div>
