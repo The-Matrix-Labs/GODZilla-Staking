@@ -29,8 +29,7 @@ const Dashboard = () => {
   const [value, setValue] = React.useState(0);
   const [copyActionButtonStyle, setCopyActionButtonStyle] =
     useState("copyActionButton");
-  const [text, setText] = React.useState(Values.tokenaddress);
-
+  const [text, setText] = React.useState(Values.stackingaddress);
   const { data: signer, isError, isLoading } = useSigner();
   const provider = useProvider();
   console.log(signer);
@@ -49,9 +48,9 @@ const Dashboard = () => {
   const [emergencyfee, setEmergencyfee] = useState();
   const [poolsize, setPoolSize] = useState();
   const [maxpool, setMaxPool] = useState(0);
-
+  const [rewards, setRewards] = useState(0);
   const [maxpoolunstaked, setMaxPoolunstaked] = useState(0);
-
+  const [stakedBal, setStakedBal] = useState(0);
   const [reward, setReward] = useState();
   const [myTokenBalance, setMyTokenBalance] = useState(0);
   const [istokenapproved, settokenapproved] = useState(false);
@@ -146,9 +145,19 @@ const Dashboard = () => {
 
   const handleup = () => {
     setCurrencyID((currencyID + 1) % currencyList.length);
+    if (currencyID === 1) {
+      setText(Values.stackingaddress);
+    } else if (currencyID === 0) {
+      setText(Values.godzlpaddress);
+    }
   };
   const handledown = () => {
     setCurrencyID((currencyID - 1 + currencyList.length) % currencyList.length);
+    if (currencyID === 1) {
+      setText(Values.stackingaddress);
+    } else if (currencyID === 0) {
+      setText(Values.godzlpaddress);
+    }
   };
 
   const handleSliderChange = (val) => {
@@ -166,14 +175,16 @@ const Dashboard = () => {
       let rpcUrl = Values.rpcURl;
       let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
       let stake_temp = new ethers.Contract(
-        Values.tokenaddress,
+        text,
         tokenabi,
         provider_
       );
       var _poolInfo = await stake_temp.pool();
       console.log("Func", stake_temp);
+      console.log ("poolInfo", _poolInfo);
       setMaxPool(await _poolInfo.poolRemainingSupply.toString());
-      setLockTime(await _poolInfo.stakeTimeLockSec.toString());
+      const locktimeseconds = await _poolInfo.stakeTimeLockSec / 86400;
+      setLockTime(locktimeseconds.toString());
       setLastrewardBlock(await _poolInfo.lastRewardBlock.toString());
       setTotalTokensStaked(await _poolInfo.totalTokensStaked.toString());
       setUnlockTime(await _poolInfo.lockedUntilDate.toString());
@@ -188,7 +199,14 @@ const Dashboard = () => {
 
       let raww = await stake_temp.getLockedUntilDate();
       console.log("Valueee---", raww.toString());
+      
 
+      var stakerBal = await stake_temp.stakers(signer.getAddress());
+
+      setStakedBal(stakerBal.amountStaked.toString());
+
+      var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
+      setRewards(rewards.toString());
       // console.log("Emergency Fees: ", _poolInfo.emergencyFees.toString());
       // const emergencywithdrawfee = await _poolInfo.emergencyFees.toString();
       // const currrentpoolsize = await _poolInfo.currentPoolSize.toString();
@@ -231,7 +249,7 @@ const Dashboard = () => {
   async function emergencywithdraw() {
     try {
       const stakeContract = new ethers.Contract(
-        Values.tokenaddress,
+        text,
         tokenabi,
         signer
       );
@@ -247,7 +265,7 @@ const Dashboard = () => {
       await approve(setstackamount);
       /*Stacking function start from here */
       const stakeContract = new ethers.Contract(
-        Values.stackingaddress,
+        text,
         tokenabi,
         signer
       );
@@ -272,8 +290,8 @@ const Dashboard = () => {
           signer
         );
         let stakeapproval = await erc20Contract.approve(
-          Values.stackingaddress,
-          setstackamount.toString()
+          text,
+          setstackamount * 10 ** 9
         );
         return stakeapproval;
       } catch (stakeContract) {
@@ -288,7 +306,7 @@ const Dashboard = () => {
   const UnStartswap = async () => {
     try {
       const stakeContract = new ethers.Contract(
-        Values.tokenaddress,
+        text,
         tokenabi,
         signer
       );
@@ -346,10 +364,10 @@ const Dashboard = () => {
             </div>
             <div class="info">
               <div class="info-child-left">
-                Staking Period: {locktime} Seconds
+                Staking Period: {locktime} Days
               </div>
               <div class="info-child-right">
-                Interest Rate: {minContribution} PR
+                Interest Rate: 9.5% PR
               </div>
             </div>
             <div>
@@ -477,7 +495,7 @@ const Dashboard = () => {
         <div class="container go-behind">
           <div class="modal">
             <div class="box3-title">
-              <div class="box3-title-content">{totalstaked} GODZ staked</div>
+              <div class="box3-title-content">{stakedBal} GODZ staked</div>
             </div>
             <div class="inner2">
               <div class="d3">
@@ -498,7 +516,7 @@ const Dashboard = () => {
             </div>
             <div class="footers">Expiration: {unlockTime} Seconds</div>
             <hr class="hr" />
-            <div class="footers">EARNED</div>
+            <div class="footers">EARNED :{rewards}</div>
             <div class="dashed_line">
               <hr class="dashed_line-child"></hr>
               <hr class="dashed_line-child"></hr>

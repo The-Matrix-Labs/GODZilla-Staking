@@ -1,5 +1,6 @@
 {
-    "tokenaddress": "0x82B52A3cE2569975f5ce8a184a7D6E5bBf1618f2",
-    "stackingaddress": "0x7B3F1d01116C794FCdB60Df2E1CbD9c35d7480c3",
-    "rpcURl": "https://matic-mumbai.chainstacklabs.com"  
+    "tokenaddress": "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7",
+    "stackingaddress": "0x3CcB7616DA41E61bd21eed52BB32570f5b827e34",
+    "godzlpaddress": "0xcf7AfA8502D8A27248Aee65d6365741C48F0421F",
+    "rpcURl": "https://bsc-dataseed.binance.org/"  
 }

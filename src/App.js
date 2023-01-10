@@ -7,12 +7,12 @@ import { Router, Location } from "@reach/router";
 
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { configureChains, createClient, WagmiConfig } from "wagmi";
-import { polygonMumbai, polygon, optimism, arbitrum } from "wagmi/chains";
+import { polygonMumbai, polygon, optimism, arbitrum, bsc} from "wagmi/chains";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 
 const { chains, provider } = configureChains(
-  [polygonMumbai, polygon, optimism, arbitrum],
+  [bsc],
   [alchemyProvider({ apiKey: process.env.ALCHEMY_ID }), publicProvider()]
 );
 
