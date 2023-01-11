@@ -38,7 +38,7 @@ const Dashboard = () => {
   console.log(signer);
 
   const [setstackamount, setStackamount] = useState(0);
-
+  const [unstakeState, setUnstakeState] = useState(false);
   const [poolId, setPoolId] = useState([10]);
   const [poolInfo, setPoolInfo] = useState();
   const [userInfo, setUserInfo] = useState();
@@ -115,7 +115,7 @@ const Dashboard = () => {
     else if (walletAddressInfo)
       setStackamount((value * walletAddressInfo) / 100);
     else setStackamount(0);
-  }, [value]);
+  }, [value, unstakeState]);
 
   const handlestake = () => {
     setstackeStyle("stake-activeoption");
@@ -125,6 +125,7 @@ const Dashboard = () => {
     setOptionState(0);
     setBGColor("");
     setHoverColor("");
+    setUnstakeState(false);
   };
 
   const handleunstake = async () => {
@@ -135,16 +136,21 @@ const Dashboard = () => {
     setOptionState(1);
     setBGColor("sliderBg-red");
     setHoverColor("sliderHover-red");
-
+    setUnstakeState(true);
     let rpcUrl = Values.rpcURl;
     let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
     let stake_temp = new ethers.Contract(
-      Values.tokenaddress,
+      text,
       tokenabi,
       provider_
     );
-    var _poolInfo = await stake_temp.pool();
-    setMaxPoolunstaked(await _poolInfo.totalTokensStaked.toString());
+    if (tokenaddr === Values.tokenaddress) {
+    var stakerBal = await stake_temp.stakers(signer.getAddress());
+      setMaxPoolunstaked ((stakerBal.amountStaked / 10 ** 9).toFixed(2));
+    } else if (tokenaddr === Values.godzlptoken) {
+      var stakerBal = await stake_temp.stakers(signer.getAddress());
+      setMaxPoolunstaked(Math.round(stakerBal.amountStaked / 10 ** 18));
+    }
   };
 
   const handleup = () => {
@@ -212,14 +218,14 @@ const Dashboard = () => {
       if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
       var stakerBal = await stake_temp.stakers(signer.getAddress());
       console.log ("stakerBal", ethers.utils.formatEther(stakerBal.amountStaked.toString()));
-      setStakedBal(Math.round(stakerBal.amountStaked / 10 ** 9));
-      setTotalTokensStaked (Math.round(await _poolInfo.totalTokensStaked / 10 ** 9).toString());      
-      setPerblockNumber (Math.round(await _poolInfo.perBlockNum / 10 ** 9).toString());
+      setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
+      setTotalTokensStaked ((await _poolInfo.totalTokensStaked / 10 ** 9).toFixed(2).toString());      
+      setPerblockNumber ((await _poolInfo.perBlockNum / 10 ** 9).toFixed(2).toString());
       var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
       setRewards(Math.round(rewards / 10 ** 9));
       } else {
         var stakerBal = await stake_temp.stakers(signer.getAddress());
-        setStakedBal(Math.round(stakerBal.amountStaked / 10 ** 18));
+        setStakedBal((stakerBal.amountStaked / 10 ** 18).toFixed(2).toString());
         setTotalTokensStaked (Math.round(ethers.utils.formatEther(await _poolInfo.totalTokensStaked.toString())));
         setPerblockNumber (Math.round(ethers.utils.formatEther(await _poolInfo.perBlockNum.toString())));  
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
@@ -308,7 +314,7 @@ const Dashboard = () => {
       provider_
     );
     let balance = await stake_temp.balanceOf(signer.getAddress());
-    let balanceconverted = Math.round(balance / 10 ** 9);
+    let balanceconverted = (balance / 10 ** 9).toFixed(2).toString();
     setWalletAddressInfo(balanceconverted.toString());
     } catch (err) {
       console.log(err.message);
@@ -356,7 +362,7 @@ const Dashboard = () => {
         signer
       );
       let stackfunction = await stakeContract.stakeTokens(
-        Math.round(setstackamount * 10 ** 9),
+        (setstackamount - 1) * 10 ** 9,
         ["1"]
       );
       await stackfunction.wait();
@@ -394,7 +400,6 @@ const Dashboard = () => {
       console.log (stakeContract.reason);
       if (stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds balance" || stakeContract.reason === "execution reverted: ds-math-sub-underflow") {
         toast.error("Insufficient Balance");
-        approve(setstackamount);
       } else if (
         stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds allowance"
       ) {
@@ -448,22 +453,36 @@ const Dashboard = () => {
   const UnStartswap = async () => {
     if (setstackamount === 0 || setstackamount === "0" || setstackamount === "") {
       toast.error("Please enter amount");
-    } else {
+    } else if ( tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ) {
     try {
       const stakeContract = new ethers.Contract(
         text,
         tokenabi,
         signer
       );
-      let stackfunction = await stakeContract.unstakeTokens(setstackamount, false);
+      let stackfunction = await stakeContract.unstakeTokens((setstackamount - 1) * 10 ** 9, false);
       await stackfunction.wait();
       getPoolInfo();
-      alert("Stacking Succesfully");
+      toast.success("Unstaking Successfully");
+    } catch (stakeContract) {
+      toast.error(stakeContract.reason);
+    }
+  } else {
+    try {
+      const stakeContract = new ethers.Contract(
+        text,
+        tokenabi,
+        signer
+      );
+      let stackfunction = await stakeContract.unstakeTokens(ethers.utils.parseEther(setstackamount), false);
+      await stackfunction.wait();
+      getPoolInfo();
+      toast.success("Unstaking Successfully");
     } catch (stakeContract) {
       toast.error(stakeContract.reason);
     }
   }
-  };
+  }
 
   return (
     <div class="dashboard-root">
@@ -594,17 +613,7 @@ const Dashboard = () => {
                 100%
               </button>
             </div>
-            {maxpoolunstaked !== 0 && buttonactive2 === true ? (
-              <div class="info2">
-                <div class="info-child2-left">Available</div>
-                { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
-                ? (
-                <div class="info-child2-right">{maxpoolunstaked || 0} GODZ</div>
-                ) : (
-                <div class="info-child2-right">{maxpoolunstaked || 0} GODZ LP</div>
-                )}
-              </div>
-            ) : (
+              { unstakeState === false ? (
               <div class="info2">
                 <div class="info-child2-left">Available</div>
                 { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
@@ -618,7 +627,22 @@ const Dashboard = () => {
                 </div>
                 )}
               </div>
-            )}
+              ) : (
+                <div class="info2">
+                <div class="info-child2-left">Available</div>
+                { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
+                ? (
+                <div class="info-child2-right">
+                  {maxpoolunstaked || 0} GODZ
+                </div>
+                ) : (
+                <div class="info-child2-right">
+                  {maxpoolunstaked || 0} GODZ LP
+                </div>
+                )}
+              </div>
+              )}
+          
 
             <div class="action">
               {!signer ? (
