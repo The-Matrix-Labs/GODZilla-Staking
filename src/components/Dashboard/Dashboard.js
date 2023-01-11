@@ -21,7 +21,7 @@ import "react-toastify/dist/ReactToastify.css";
 const Dashboard = () => {
   const theme = useTheme();
   const data_hover =
-    "Note - By doing emergency withdraw you will not recieve any reward also extra fees will be deducted.";
+    "Note - By doing emergency withdraw you will not receive any accrued reward";
   const [stackeStyle, setstackeStyle] = useState("stake-activeoption");
   const [unstakeStyle, setunstackeStyle] = useState("inactiveoption");
 
@@ -72,7 +72,7 @@ const Dashboard = () => {
   const [errors, setError] = useState();
   const [block, setCurrentblock] = useState(0);
   const [currencyID, setCurrencyID] = React.useState("0");
-  const currencyList = ["GODZ", "GODZlp"];
+  const currencyList = ["GODZ", "GODZ LP"];
   const [optionState, setOptionState] = useState("0");
   const [bgColor, setBGColor] = useState("sliderBg");
   const [hoverColor, setHoverColor] = useState("sliderHover");
@@ -601,7 +601,7 @@ const Dashboard = () => {
                 ? (
                 <div class="info-child2-right">{maxpoolunstaked || 0} GODZ</div>
                 ) : (
-                <div class="info-child2-right">{maxpoolunstaked || 0} GODZlp</div>
+                <div class="info-child2-right">{maxpoolunstaked || 0} GODZ LP</div>
                 )}
               </div>
             ) : (
@@ -614,7 +614,7 @@ const Dashboard = () => {
                 </div>
                 ) : (
                 <div class="info-child2-right">
-                  {walletAddressInfo || 0} GODZlp
+                  {walletAddressInfo || 0} GODZ LP
                 </div>
                 )}
               </div>
@@ -661,7 +661,7 @@ const Dashboard = () => {
               { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
                 ? (
               <div class="box3-title-content">{stakedBal} GODZ staked</div>  ) : (
-                <div class="box3-title-content">{stakedBal} GODZlp staked</div>
+                <div class="box3-title-content">{stakedBal} GODZ LP staked</div>
               )}
             </div>
             <div class="inner2">
@@ -676,8 +676,8 @@ const Dashboard = () => {
               </div>
               ) : (
                 <div class="d4">
-                <div class="stats-values">({perblock} GODZlp/block)</div>
-                <div class="stats-values">{totalstaked} GODZlp staked</div>
+                <div class="stats-values">({perblock} GODZ LP/block)</div>
+                <div class="stats-values">{totalstaked} GODZ LP staked</div>
                 </div>
               )}
             </div>
