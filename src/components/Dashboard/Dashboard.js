@@ -533,7 +533,7 @@ const Dashboard = () => {
             </div>
             <div class="info">
               <div class="info-child-left">
-                Staking Period: {locktime} Days
+                Staking Ends: {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"? "March 16": "March 15"} 
               </div>
               <div class="info-child-right">
                 Interest Rate: {apy}%
@@ -676,6 +676,9 @@ const Dashboard = () => {
                   {data_hover}
                 </span>
               </div>
+            </div>
+            <div class="info-child-right" style={{paddingTop: "32px"}}>
+              TimeLock: {locktime}
             </div>
           </div>
         </div>
