@@ -678,7 +678,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div class="info-child-right" style={{paddingTop: "32px"}}>
-              TimeLock: {locktime}
+              TimeLock: {locktime} Days
             </div>
           </div>
         </div>
