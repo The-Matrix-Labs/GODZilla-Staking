@@ -149,7 +149,7 @@ const Dashboard = () => {
       setMaxPoolunstaked ((stakerBal.amountStaked / 10 ** 9).toFixed(2));
     } else if (tokenaddr === Values.godzlptoken) {
       var stakerBal = await stake_temp.stakers(signer.getAddress());
-      setMaxPoolunstaked(Math.round(stakerBal.amountStaked / 10 ** 18));
+      setMaxPoolunstaked ((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
     }
   };
 
@@ -217,19 +217,20 @@ const Dashboard = () => {
       
       if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
       var stakerBal = await stake_temp.stakers(signer.getAddress());
+      console.log ("stakerInfo", stakerBal);
       console.log ("stakerBal", ethers.utils.formatEther(stakerBal.amountStaked.toString()));
       setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
       setTotalTokensStaked ((await _poolInfo.totalTokensStaked / 10 ** 9).toFixed(2).toString());      
       setPerblockNumber ((await _poolInfo.perBlockNum / 10 ** 9).toFixed(2).toString());
       var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
-      setRewards(Math.round(rewards / 10 ** 9));
+      setRewards((rewards / 10 ** 9).toFixed(2).toString());
       } else {
         var stakerBal = await stake_temp.stakers(signer.getAddress());
-        setStakedBal((stakerBal.amountStaked / 10 ** 18).toFixed(2).toString());
-        setTotalTokensStaked (Math.round(ethers.utils.formatEther(await _poolInfo.totalTokensStaked.toString())));
-        setPerblockNumber (Math.round(ethers.utils.formatEther(await _poolInfo.perBlockNum.toString())));  
+        setStakedBal ((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
+        setTotalTokensStaked ((await _poolInfo.totalTokensStaked / 10 ** 18).toFixed(2).toString());
+        setPerblockNumber ((await _poolInfo.perBlockNum / 10 ** 9).toFixed(2).toString());
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
-        setRewards(Math.round(rewards.toString()));
+        setRewards(ethers.utils.formatEther(rewards.toString()));
       }
 
       // console.log("Emergency Fees: ", _poolInfo.emergencyFees.toString());
@@ -277,7 +278,7 @@ const Dashboard = () => {
         totaltokensstaked
       );
       const perblocknumberconverted = ethers.utils.formatEther(perblocknumber);
-      const apy = (((perblocknumberconverted * blockperday) / totaltokensstakedconverted) * 365).toFixed(2);
+      const apy = (((perblocknumberconverted * blockperday) / totaltokensstakedconverted) * 365 * 100).toFixed(2);
       setApy(apy);
     } catch (err) {
       console.log(err.message);
@@ -293,9 +294,13 @@ const Dashboard = () => {
       );
       var _poolInfo = await stake_temp.pool();
       const blockperday = 86400 / 3;
-      const totaltokensstaked = (ethers.utils.formatEther(await _poolInfo.totalTokensStaked)).toString();
-      const perblocknumber = (ethers.utils.formatEther(await _poolInfo.perBlockNum)).toString();
-      const apy = (((perblocknumber * blockperday) / totaltokensstaked) * 365).toFixed(2);
+      const totaltokensstaked = (await _poolInfo.totalTokensStaked).toString();
+      const perblocknumber = (await _poolInfo.perBlockNum).toString();
+      const totaltokensstakedconverted = ethers.utils.formatEther(
+        totaltokensstaked
+      );
+      const perblocknumberconverted = ethers.utils.formatEther(perblocknumber);
+      const apy = (((perblocknumberconverted * blockperday) / totaltokensstakedconverted) * 365 * 100).toFixed(2);
       setApy(apy);
     } catch (err) {
       console.log(err.message);
@@ -329,7 +334,7 @@ const Dashboard = () => {
       provider_
     );
     let balance = await stake_temp.balanceOf(signer.getAddress());
-    let balanceconverted = Math.round(ethers.utils.formatEther(balance));
+    let balanceconverted = ((balance / 10 ** 18).toFixed(5).toString());
     setWalletAddressInfo(balanceconverted.toString());
     } catch (err) {
       console.log(err.message);
@@ -367,6 +372,7 @@ const Dashboard = () => {
       );
       await stackfunction.wait();
       getPoolInfo();
+      getbalance();
       toast.success("Staking Successfully");
     } catch (stakeContract) {
       console.log (stakeContract.reason);
@@ -389,12 +395,12 @@ const Dashboard = () => {
         signer
       );
       let stackfunction = await stakeContract.stakeTokens(
-        ethers.utils.parseEther(setstackamount),
+        ethers.utils.parseEther(setstackamount.toString()),
         ["1"]
       );
-      console.log (stackfunction);
       await stackfunction.wait();
       getPoolInfo();
+      getbalance();
       toast.success("Staking Successfully");
     } catch (stakeContract) {
       console.log (stakeContract.reason);
@@ -439,7 +445,7 @@ const Dashboard = () => {
           ); 
         let stakeapproval = await erc20Contract.approve(
           text,
-          ethers.utils.parseEther(setstackamount)
+          ethers.utils.parseEther(setstackamount.toString())
         );
         await stakeapproval.wait();
         toast.success("Approved");
@@ -463,6 +469,7 @@ const Dashboard = () => {
       let stackfunction = await stakeContract.unstakeTokens((setstackamount - 1) * 10 ** 9, false);
       await stackfunction.wait();
       getPoolInfo();
+      getbalance();
       toast.success("Unstaking Successfully");
     } catch (stakeContract) {
       toast.error(stakeContract.reason);
@@ -477,6 +484,7 @@ const Dashboard = () => {
       let stackfunction = await stakeContract.unstakeTokens(ethers.utils.parseEther(setstackamount), false);
       await stackfunction.wait();
       getPoolInfo();
+      getbalance();
       toast.success("Unstaking Successfully");
     } catch (stakeContract) {
       toast.error(stakeContract.reason);
