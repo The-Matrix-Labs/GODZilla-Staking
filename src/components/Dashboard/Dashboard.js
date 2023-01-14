@@ -214,8 +214,8 @@ const Dashboard = () => {
   }, [text, locktime, signer]);
 
   useEffect(() => {
-    console.log(maxpoolunstaked);
-  }, [maxpoolunstaked]);
+    console.log(perblock, "1111111111");
+  }, [maxpoolunstaked, perblock, totalstaked]);
 
   async function getPoolInfo() {
     try {
@@ -224,7 +224,7 @@ const Dashboard = () => {
       let stake_temp = new ethers.Contract(text, tokenabi, provider_);
       var _poolInfo = await stake_temp.pool();
       // console.log("Func", stake_temp);
-      // console.log("poolInfo", _poolInfo);
+      console.log("poolInfo", _poolInfo);
       setMaxPool(await _poolInfo.poolRemainingSupply.toString());
       const locktimeseconds = (await _poolInfo.stakeTimeLockSec) / 86400;
       setLockTime(locktimeseconds.toString());
@@ -242,35 +242,35 @@ const Dashboard = () => {
       console.log("Valueee---", raww.toString());
 
       if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
-        var stakerBal = await stake_temp.stakers(signer.getAddress());
-        var time_temp = new Date(
-          (await stakerBal.timeOriginallyStaked) * 1000 +
-            parseInt(locktime) * 86400 * 1000
+        setPerblockNumber(
+          ((await _poolInfo.perBlockNum) / 10 ** 9).toFixed(2).toString()
         );
-        setEst(time_temp.toDateString() + " " + time_temp.toLocaleTimeString());
-        // console.log("stakerInfo", stakerBal, new Date(time_temp));
+        setTotalTokensStaked(
+          ((await _poolInfo.totalTokensStaked) / 10 ** 9).toFixed(2).toString()
+        );
+
+        var stakerBal = await stake_temp.stakers(signer.getAddress());
+        
+        // setEst(time_temp.toDateString() + " " + time_temp.toLocaleTimeString());
+        console.log("stakerInfo", stakerBal);
         // console.log(
         //   "stakerBal",
         //   ethers.utils.formatEther(stakerBal.amountStaked.toString())
         // );
         setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
-        setTotalTokensStaked(
-          ((await _poolInfo.totalTokensStaked) / 10 ** 9).toFixed(2).toString()
-        );
-        setPerblockNumber(
-          ((await _poolInfo.perBlockNum) / 10 ** 9).toFixed(2).toString()
-        );
+        
+        
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
         setRewards((rewards / 10 ** 9).toFixed(2).toString());
       } else {
-        var stakerBal = await stake_temp.stakers(signer.getAddress());
-        setStakedBal((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
-        setTotalTokensStaked(
-          ((await _poolInfo.totalTokensStaked) / 10 ** 18).toFixed(2).toString()
-        );
         setPerblockNumber(
           ((await _poolInfo.perBlockNum) / 10 ** 9).toFixed(2).toString()
         );
+        setTotalTokensStaked(
+          ((await _poolInfo.totalTokensStaked) / 10 ** 18).toFixed(2).toString()
+        );
+        var stakerBal = await stake_temp.stakers(signer.getAddress());
+        setStakedBal((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
         setRewards(ethers.utils.formatEther(rewards.toString()));
       }
@@ -766,7 +766,11 @@ const Dashboard = () => {
               Expiration: <div class="stats-values"></div>
             </div>
             <div class="d4">
-              <div class="stats-values">[ est. {est} ]</div>
+              <div class="stats-values">
+                {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
+                  ? "Est: Mar 16, 2023 15:56"
+                  : "Est: Mar 15, 2023 16:22"}
+              </div>
             </div>
             <hr class="hr" />
             <div class="footers">EARNED :{rewards}</div>
