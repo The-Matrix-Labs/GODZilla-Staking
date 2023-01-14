@@ -35,7 +35,7 @@ const Dashboard = () => {
   const [tokenaddr, setTokenaddr] = useState(Values.tokenaddress);
   const { data: signer, isError, isLoading } = useSigner();
   const provider = useProvider();
-  console.log(signer);
+  // console.log(signer);
 
   const [setstackamount, setStackamount] = useState(0);
   const [unstakeState, setUnstakeState] = useState(false);
@@ -47,6 +47,7 @@ const Dashboard = () => {
   const [amount, setAmount] = useState();
   const [myaddress, setMyaddress] = useState();
   const [locktime, setLockTime] = useState(0);
+  const [est, setEst] = useState();
   const [unlockTime, setUnlockTime] = useState(1);
   const [emergencyfee, setEmergencyfee] = useState();
   const [poolsize, setPoolSize] = useState();
@@ -110,11 +111,21 @@ const Dashboard = () => {
     console.log(value);
     sliderOptionsStyle[value / 25] =
       "slider_custom_options-child-active " + bgColor;
-    if (maxpoolunstaked !== 0 && buttonactive2 === true)
-      setStackamount((value * maxpoolunstaked) / 100);
-    else if (walletAddressInfo)
-      setStackamount((value * walletAddressInfo) / 100);
-    else setStackamount(0);
+    if (maxpoolunstaked !== 0 && buttonactive2 === true) {
+      var temp = (value * maxpoolunstaked) / 100;
+      if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
+        setStackamount(temp.toFixed(2).toString());
+      } else {
+        setStackamount(temp.toFixed(6).toString());
+      }
+    } else if (walletAddressInfo) {
+      var temp = (value * walletAddressInfo) / 100;
+      if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
+        setStackamount(temp.toFixed(2).toString());
+      } else {
+        setStackamount(temp.toFixed(6).toString());
+      }
+    } else setStackamount(0);
   }, [value, unstakeState]);
 
   const handlestake = () => {
@@ -129,6 +140,7 @@ const Dashboard = () => {
   };
 
   const handleunstake = async () => {
+    console.log("132");
     setstackeStyle("inactiveoption");
     setunstackeStyle("unstake-activeoption");
     setButtonactive2(true);
@@ -139,22 +151,32 @@ const Dashboard = () => {
     setUnstakeState(true);
     let rpcUrl = Values.rpcURl;
     let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-    let stake_temp = new ethers.Contract(
-      text,
-      tokenabi,
-      provider_
-    );
+    let stake_temp = new ethers.Contract(text, tokenabi, provider_);
     if (tokenaddr === Values.tokenaddress) {
-    var stakerBal = await stake_temp.stakers(signer.getAddress());
-      setMaxPoolunstaked ((stakerBal.amountStaked / 10 ** 9).toFixed(2));
+      var stakerBal = await stake_temp.balanceOf(signer.getAddress());
+      setMaxPoolunstaked((stakerBal / 10 ** 9).toFixed(2));
     } else if (tokenaddr === Values.godzlptoken) {
-      var stakerBal = await stake_temp.stakers(signer.getAddress());
-      setMaxPoolunstaked ((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
+      var stakerBal = await stake_temp.balanceOf(signer.getAddress());
+      setMaxPoolunstaked((stakerBal / 10 ** 18).toFixed(6).toString());
+    }
+  };
+
+  const handleUpdateUnstake = async () => {
+    console.log("137");
+    let rpcUrl = Values.rpcURl;
+    let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+    let stake_temp = new ethers.Contract(text, tokenabi, provider_);
+    if (tokenaddr === Values.tokenaddress) {
+      var stakerBal = await stake_temp.balanceOf(signer.getAddress());
+      setMaxPoolunstaked((stakerBal / 10 ** 9).toFixed(2));
+    } else if (tokenaddr === Values.godzlptoken) {
+      var stakerBal = await stake_temp.balanceOf(signer.getAddress());
+      setMaxPoolunstaked((stakerBal / 10 ** 18).toFixed(6).toString());
     }
   };
 
   const handleup = () => {
-    setCurrencyID((currencyID + 1) % currencyList.length)
+    setCurrencyID((currencyID + 1) % currencyList.length);
     let curID = currencyID.toString();
     if (curID === "1") {
       setText(Values.stackingaddress);
@@ -182,53 +204,73 @@ const Dashboard = () => {
 
   useEffect(() => {
     getPoolInfo();
+    console.log(poolInfo);
     getbalance();
     getApy();
+    try {
+      handleUpdateUnstake();
+    } catch (e) {}
     //console.log(sliderOptionsStyle);
   }, [text, locktime, signer]);
+
+  useEffect(() => {
+    console.log(maxpoolunstaked);
+  }, [maxpoolunstaked]);
 
   async function getPoolInfo() {
     try {
       let rpcUrl = Values.rpcURl;
       let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-      let stake_temp = new ethers.Contract(
-        text,
-        tokenabi,
-        provider_
-      );
+      let stake_temp = new ethers.Contract(text, tokenabi, provider_);
       var _poolInfo = await stake_temp.pool();
-      console.log("Func", stake_temp);
-      console.log ("poolInfo", _poolInfo);
+      // console.log("Func", stake_temp);
+      // console.log("poolInfo", _poolInfo);
       setMaxPool(await _poolInfo.poolRemainingSupply.toString());
-      const locktimeseconds = await _poolInfo.stakeTimeLockSec / 86400;
+      const locktimeseconds = (await _poolInfo.stakeTimeLockSec) / 86400;
       setLockTime(locktimeseconds.toString());
       setLastrewardBlock(await _poolInfo.lastRewardBlock.toString());
       setUnlockTime(await _poolInfo.lockedUntilDate.toString());
       setMinContribution(await _poolInfo.accERC20PerShare.toString());
       setMaxContribution(await _poolInfo.stakeTimeLockSec.toString());
 
-      console.log("pool Info", _poolInfo);
+      // console.log("pool Info", _poolInfo);
 
       let block = await stake_temp.getLastStakableBlock();
       setCurrentblock(block.toString());
 
       let raww = await stake_temp.getLockedUntilDate();
       console.log("Valueee---", raww.toString());
-      
+
       if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
-      var stakerBal = await stake_temp.stakers(signer.getAddress());
-      console.log ("stakerInfo", stakerBal);
-      console.log ("stakerBal", ethers.utils.formatEther(stakerBal.amountStaked.toString()));
-      setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
-      setTotalTokensStaked ((await _poolInfo.totalTokensStaked / 10 ** 9).toFixed(2).toString());      
-      setPerblockNumber ((await _poolInfo.perBlockNum / 10 ** 9).toFixed(2).toString());
-      var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
-      setRewards((rewards / 10 ** 9).toFixed(2).toString());
+        var stakerBal = await stake_temp.stakers(signer.getAddress());
+        var time_temp = new Date(
+          (await stakerBal.timeOriginallyStaked) * 1000 +
+            parseInt(locktime) * 86400 * 1000
+        );
+        setEst(time_temp.toDateString() + " " + time_temp.toLocaleTimeString());
+        // console.log("stakerInfo", stakerBal, new Date(time_temp));
+        // console.log(
+        //   "stakerBal",
+        //   ethers.utils.formatEther(stakerBal.amountStaked.toString())
+        // );
+        setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
+        setTotalTokensStaked(
+          ((await _poolInfo.totalTokensStaked) / 10 ** 9).toFixed(2).toString()
+        );
+        setPerblockNumber(
+          ((await _poolInfo.perBlockNum) / 10 ** 9).toFixed(2).toString()
+        );
+        var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
+        setRewards((rewards / 10 ** 9).toFixed(2).toString());
       } else {
         var stakerBal = await stake_temp.stakers(signer.getAddress());
-        setStakedBal ((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
-        setTotalTokensStaked ((await _poolInfo.totalTokensStaked / 10 ** 18).toFixed(2).toString());
-        setPerblockNumber ((await _poolInfo.perBlockNum / 10 ** 9).toFixed(2).toString());
+        setStakedBal((stakerBal.amountStaked / 10 ** 18).toFixed(6).toString());
+        setTotalTokensStaked(
+          ((await _poolInfo.totalTokensStaked) / 10 ** 18).toFixed(2).toString()
+        );
+        setPerblockNumber(
+          ((await _poolInfo.perBlockNum) / 10 ** 9).toFixed(2).toString()
+        );
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
         setRewards(ethers.utils.formatEther(rewards.toString()));
       }
@@ -262,170 +304,166 @@ const Dashboard = () => {
 
   async function getApy() {
     if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
-    try {
-      let rpcUrl = Values.rpcURl;
-      let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-      let stake_temp = new ethers.Contract(
-        text,
-        tokenabi,
-        provider_
-      );
-      var _poolInfo = await stake_temp.pool();
-      const blockperday = 86400 / 3;
-      const totaltokensstaked = (Math.round(await _poolInfo.totalTokensStaked / 10 ** 9).toString());
-      const perblocknumber = (Math.round(await _poolInfo.perBlockNum / 10 ** 9).toString());
-      const totaltokensstakedconverted = ethers.utils.formatEther(
-        totaltokensstaked
-      );
-      const perblocknumberconverted = ethers.utils.formatEther(perblocknumber);
-      const apy = (((perblocknumberconverted * blockperday) / totaltokensstakedconverted) * 365 * 100).toFixed(2);
-      setApy(apy);
-    } catch (err) {
-      console.log(err.message);
+      try {
+        let rpcUrl = Values.rpcURl;
+        let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+        let stake_temp = new ethers.Contract(text, tokenabi, provider_);
+        var _poolInfo = await stake_temp.pool();
+        const blockperday = 86400 / 3;
+        const totaltokensstaked = Math.round(
+          (await _poolInfo.totalTokensStaked) / 10 ** 9
+        ).toString();
+        const perblocknumber = Math.round(
+          (await _poolInfo.perBlockNum) / 10 ** 9
+        ).toString();
+        const totaltokensstakedconverted =
+          ethers.utils.formatEther(totaltokensstaked);
+        const perblocknumberconverted =
+          ethers.utils.formatEther(perblocknumber);
+        const apy = (
+          ((perblocknumberconverted * blockperday) /
+            totaltokensstakedconverted) *
+          365 *
+          100
+        ).toFixed(2);
+        setApy(apy);
+      } catch (err) {
+        console.log(err.message);
+      }
+    } else {
+      try {
+        let rpcUrl = Values.rpcURl;
+        let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+        let stake_temp = new ethers.Contract(text, tokenabi, provider_);
+        var _poolInfo = await stake_temp.pool();
+        const blockperday = 86400 / 3;
+        const totaltokensstaked = (
+          await _poolInfo.totalTokensStaked
+        ).toString();
+        const perblocknumber = (await _poolInfo.perBlockNum).toString();
+        const totaltokensstakedconverted =
+          ethers.utils.formatEther(totaltokensstaked);
+        const perblocknumberconverted =
+          ethers.utils.formatEther(perblocknumber);
+        const apy = (
+          ((perblocknumberconverted * blockperday) /
+            totaltokensstakedconverted) *
+          365 *
+          100
+        ).toFixed(2);
+        setApy(apy);
+      } catch (err) {
+        console.log(err.message);
+      }
     }
-  } else {
-    try {
-      let rpcUrl = Values.rpcURl;
-      let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-      let stake_temp = new ethers.Contract(
-        text,
-        tokenabi,
-        provider_
-      );
-      var _poolInfo = await stake_temp.pool();
-      const blockperday = 86400 / 3;
-      const totaltokensstaked = (await _poolInfo.totalTokensStaked).toString();
-      const perblocknumber = (await _poolInfo.perBlockNum).toString();
-      const totaltokensstakedconverted = ethers.utils.formatEther(
-        totaltokensstaked
-      );
-      const perblocknumberconverted = ethers.utils.formatEther(perblocknumber);
-      const apy = (((perblocknumberconverted * blockperday) / totaltokensstakedconverted) * 365 * 100).toFixed(2);
-      setApy(apy);
-    } catch (err) {
-      console.log(err.message);
-    }
-  }
   }
 
   async function getbalance() {
-    if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"){
-    try {
-    let rpcUrl = Values.rpcURl;
-    let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-    let stake_temp = new ethers.Contract(
-      tokenaddr,
-      erc20ABI,
-      provider_
-    );
-    let balance = await stake_temp.balanceOf(signer.getAddress());
-    let balanceconverted = (balance / 10 ** 9).toFixed(2).toString();
-    setWalletAddressInfo(balanceconverted.toString());
-    } catch (err) {
-      console.log(err.message);
+    if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
+      try {
+        let rpcUrl = Values.rpcURl;
+        let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+        let stake_temp = new ethers.Contract(tokenaddr, erc20ABI, provider_);
+        let balance = await stake_temp.balanceOf(signer.getAddress());
+        let balanceconverted = (balance / 10 ** 9).toFixed(2).toString();
+        setWalletAddressInfo(balanceconverted.toString());
+      } catch (err) {
+        console.log(err.message);
+      }
+    } else {
+      try {
+        let rpcUrl = Values.rpcURl;
+        let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
+        let stake_temp = new ethers.Contract(tokenaddr, erc20ABI, provider_);
+        let balance = await stake_temp.balanceOf(signer.getAddress());
+        let balanceconverted = (balance / 10 ** 18).toFixed(5).toString();
+        setWalletAddressInfo(balanceconverted.toString());
+      } catch (err) {
+        console.log(err.message);
+      }
     }
-  } else {
-    try {
-    let rpcUrl = Values.rpcURl;
-    let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
-    let stake_temp = new ethers.Contract(
-      tokenaddr,
-      erc20ABI,
-      provider_
-    );
-    let balance = await stake_temp.balanceOf(signer.getAddress());
-    let balanceconverted = ((balance / 10 ** 18).toFixed(5).toString());
-    setWalletAddressInfo(balanceconverted.toString());
-    } catch (err) {
-      console.log(err.message);
-    }
-  }
   }
 
   async function emergencywithdraw() {
     try {
-      const stakeContract = new ethers.Contract(
-        text,
-        tokenabi,
-        signer
-      );
+      const stakeContract = new ethers.Contract(text, tokenabi, signer);
       let stackfunction = await stakeContract.emergencyUnstake();
       await stackfunction.wait();
     } catch (stakeContract) {
-      toast.error (stakeContract.reason);
+      toast.error(stakeContract.reason);
     }
   }
 
   const Startswap = async () => {
-    if (setstackamount === 0 || setstackamount === "0" || setstackamount === "") {
-       toast.error("Please enter amount");
-    } else if ( tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ) {
-       try {
-      const stakeContract = new ethers.Contract(
-        text,
-        tokenabi,
-        signer
-      );
-      let stackfunction = await stakeContract.stakeTokens(
-        (setstackamount - 1) * 10 ** 9,
-        ["1"]
-      );
-      await stackfunction.wait();
-      getPoolInfo();
-      getbalance();
-      toast.success("Staking Successfully");
-    } catch (stakeContract) {
-      console.log (stakeContract.reason);
-      if (stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds balance") {
-        toast.error("Insufficient Balance");
-      } else if (
-        stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds allowance"
-      ) {
-        toast.error("Please Approve Token");
-        approve(setstackamount);
-      } else {
-        toast.error(stakeContract.reason);
+    if (
+      setstackamount === 0 ||
+      setstackamount === "0" ||
+      setstackamount === ""
+    ) {
+      toast.error("Please enter amount");
+    } else if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
+      try {
+        const stakeContract = new ethers.Contract(text, tokenabi, signer);
+        let stackfunction = await stakeContract.stakeTokens(
+          (setstackamount - 1) * 10 ** 9,
+          ["1"]
+        );
+        await stackfunction.wait();
+        getPoolInfo();
+        getbalance();
+        toast.success("Staking Successfully");
+        await handleUpdateUnstake();
+      } catch (stakeContract) {
+        console.log(stakeContract.reason);
+        if (
+          stakeContract.reason ===
+          "execution reverted: ERC20: transfer amount exceeds balance"
+        ) {
+          toast.error("Insufficient Balance");
+        } else if (
+          stakeContract.reason ===
+          "execution reverted: ERC20: transfer amount exceeds allowance"
+        ) {
+          toast.error("Please Approve Token");
+          approve(setstackamount);
+        } else {
+          toast.error(stakeContract.reason);
+        }
+      }
+    } else {
+      try {
+        await approve(setstackamount);
+        const stakeContract = new ethers.Contract(text, tokenabi, signer);
+        let stackfunction = await stakeContract.stakeTokens(
+          ethers.utils.parseEther(setstackamount.toString()),
+          ["1"]
+        );
+        await stackfunction.wait();
+        getPoolInfo();
+        getbalance();
+        toast.success("Staking Successfully");
+        await handleUpdateUnstake();
+      } catch (stakeContract) {
+        if (
+          stakeContract.reason ===
+          "execution reverted: ERC20: transfer amount exceeds balance"
+        ) {
+          toast.error("Insufficient Balance");
+        } else if (
+          stakeContract.reason ===
+          "execution reverted: ERC20: transfer amount exceeds allowance"
+        ) {
+          toast.error("Please Approve Token");
+          approve(setstackamount);
+        }
       }
     }
-  } else {
-    try {
-      const stakeContract = new ethers.Contract(
-        text,
-        tokenabi,
-        signer
-      );
-      let stackfunction = await stakeContract.stakeTokens(
-        ethers.utils.parseEther(setstackamount.toString()),
-        ["1"]
-      );
-      await stackfunction.wait();
-      getPoolInfo();
-      getbalance();
-      toast.success("Staking Successfully");
-    } catch (stakeContract) {
-      console.log (stakeContract.reason);
-      if (stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds balance" || stakeContract.reason === "execution reverted: ds-math-sub-underflow") {
-        toast.error("Insufficient Balance");
-      } else if (
-        stakeContract.reason === "execution reverted: ERC20: transfer amount exceeds allowance"
-      ) {
-        toast.error("Please Approve Token");
-        approve(setstackamount);
-      } else {
-        toast.error(stakeContract.reason);
-      }
-    }
-  }
   };
 
   const approve = async (setstackamount) => {
     if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
       try {
-        const erc20Contract = new ethers.Contract(
-          tokenaddr,
-          erc20ABI,
-          signer
-        );     
+        const erc20Contract = new ethers.Contract(tokenaddr, erc20ABI, signer);
         let stakeapproval = await erc20Contract.approve(
           text,
           setstackamount * 10 ** 9
@@ -433,23 +471,18 @@ const Dashboard = () => {
         await stakeapproval.wait();
         toast.success("Approved");
         Startswap();
-        } catch (stakeapproval) {
-          toast.error(stakeapproval.reason);
-        }
-      } else {
-        try {
-          const erc20Contract = new ethers.Contract(
-            tokenaddr,
-            erc20ABI,
-            signer
-          ); 
+      } catch (stakeapproval) {
+        toast.error(stakeapproval.reason);
+      }
+    } else {
+      try {
+        const erc20Contract = new ethers.Contract(tokenaddr, erc20ABI, signer);
         let stakeapproval = await erc20Contract.approve(
           text,
           ethers.utils.parseEther(setstackamount.toString())
         );
         await stakeapproval.wait();
         toast.success("Approved");
-        Startswap();
       } catch (stakeContract) {
         toast.error(stakeContract.reason);
       }
@@ -457,40 +490,44 @@ const Dashboard = () => {
   };
 
   const UnStartswap = async () => {
-    if (setstackamount === 0 || setstackamount === "0" || setstackamount === "") {
+    if (
+      setstackamount === 0 ||
+      setstackamount === "0" ||
+      setstackamount === ""
+    ) {
       toast.error("Please enter amount");
-    } else if ( tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ) {
-    try {
-      const stakeContract = new ethers.Contract(
-        text,
-        tokenabi,
-        signer
-      );
-      let stackfunction = await stakeContract.unstakeTokens((setstackamount - 1) * 10 ** 9, false);
-      await stackfunction.wait();
-      getPoolInfo();
-      getbalance();
-      toast.success("Unstaking Successfully");
-    } catch (stakeContract) {
-      toast.error(stakeContract.reason);
+    } else if (tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7") {
+      try {
+        const stakeContract = new ethers.Contract(text, tokenabi, signer);
+        let stackfunction = await stakeContract.unstakeTokens(
+          (setstackamount - 1) * 10 ** 9,
+          false
+        );
+        await stackfunction.wait();
+        getPoolInfo();
+        getbalance();
+        toast.success("Unstaking Successfully");
+        await handleUpdateUnstake();
+      } catch (stakeContract) {
+        toast.error(stakeContract.reason);
+      }
+    } else {
+      try {
+        const stakeContract = new ethers.Contract(text, tokenabi, signer);
+        let stackfunction = await stakeContract.unstakeTokens(
+          ethers.utils.parseEther(setstackamount),
+          false
+        );
+        await stackfunction.wait();
+        getPoolInfo();
+        getbalance();
+        toast.success("Unstaking Successfully");
+        await handleUpdateUnstake();
+      } catch (stakeContract) {
+        toast.error(stakeContract.reason);
+      }
     }
-  } else {
-    try {
-      const stakeContract = new ethers.Contract(
-        text,
-        tokenabi,
-        signer
-      );
-      let stackfunction = await stakeContract.unstakeTokens(ethers.utils.parseEther(setstackamount), false);
-      await stackfunction.wait();
-      getPoolInfo();
-      getbalance();
-      toast.success("Unstaking Successfully");
-    } catch (stakeContract) {
-      toast.error(stakeContract.reason);
-    }
-  }
-  }
+  };
 
   return (
     <div class="dashboard-root">
@@ -498,7 +535,7 @@ const Dashboard = () => {
         position="top-right"
         autoClose={5000}
         hideProgressBar={false}
-       />
+      />
       <div class="title">GODZilla Staking Program</div>
 
       <div class="box1">
@@ -541,18 +578,21 @@ const Dashboard = () => {
             </div>
             <div class="info">
               <div class="info-child-left">
-                Staking Ends: {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"? "March 16": "March 15"} 
+                Staking Ends:{" "}
+                {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
+                  ? "March 16"
+                  : "March 15"}
               </div>
-              <div class="info-child-right">
-                Interest Rate: {apy}%
-              </div>
+              <div class="info-child-right">Interest Rate: {apy}%</div>
             </div>
             <div>
               <input
                 type="text"
                 class="amount"
                 value={setstackamount}
-                onChange={(e) => setStackamount(e.target.value)}
+                onChange={(e) => {
+                  setStackamount(e.target.value);
+                }}
                 placeholder="Enter amount (GODZ)"
               ></input>
             </div>
@@ -621,36 +661,33 @@ const Dashboard = () => {
                 100%
               </button>
             </div>
-              { unstakeState === false ? (
+            {unstakeState === false ? (
               <div class="info2">
                 <div class="info-child2-left">Available</div>
-                { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
-                ? (
-                <div class="info-child2-right">
-                  {walletAddressInfo || 0} GODZ
-                </div>
+                {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ? (
+                  <div class="info-child2-right">
+                    {walletAddressInfo || 0} GODZ
+                  </div>
                 ) : (
-                <div class="info-child2-right">
-                  {walletAddressInfo || 0} GODZ LP
-                </div>
+                  <div class="info-child2-right">
+                    {walletAddressInfo || 0} GODZ LP
+                  </div>
                 )}
               </div>
-              ) : (
-                <div class="info2">
+            ) : (
+              <div class="info2">
                 <div class="info-child2-left">Available</div>
-                { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
-                ? (
-                <div class="info-child2-right">
-                  {maxpoolunstaked || 0} GODZ
-                </div>
+                {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ? (
+                  <div class="info-child2-right">
+                    {maxpoolunstaked || 0} GODZ
+                  </div>
                 ) : (
-                <div class="info-child2-right">
-                  {maxpoolunstaked || 0} GODZ LP
-                </div>
+                  <div class="info-child2-right">
+                    {maxpoolunstaked || 0} GODZ LP
+                  </div>
                 )}
               </div>
-              )}
-          
+            )}
 
             <div class="action">
               {!signer ? (
@@ -685,7 +722,7 @@ const Dashboard = () => {
                 </span>
               </div>
             </div>
-            <div class="info-child-right" style={{paddingTop: "32px"}}>
+            <div class="info-child-right" style={{ paddingTop: "32px" }}>
               TimeLock: {locktime} Days
             </div>
           </div>
@@ -693,26 +730,29 @@ const Dashboard = () => {
         <div class="container go-behind">
           <div class="modal">
             <div class="box3-title">
-              { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
-                ? (
-              <div class="box3-title-content">{stakedBal} GODZ staked</div>  ) : (
-                <div class="box3-title-content">{stakedBal} GODZ LP staked</div>
+              {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ? (
+                <div class="box3-title-content">
+                  {maxpoolunstaked} GODZ staked
+                </div>
+              ) : (
+                <div class="box3-title-content">
+                  {maxpoolunstaked} GODZ LP staked
+                </div>
               )}
             </div>
             <div class="inner2">
               <div class="d3">
                 <h4 class="d3-child">{apy}% APR</h4>
               </div>
-              { tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7"
-                ? (
-              <div class="d4">
-                <div class="stats-values">({perblock} GODZ/block)</div>
-                <div class="stats-values">{totalstaked} GODZ staked</div>
-              </div>
+              {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ? (
+                <div class="d4">
+                  <div class="stats-values">({perblock} GODZ/block)</div>
+                  <div class="stats-values">{totalstaked} GODZ staked</div>
+                </div>
               ) : (
                 <div class="d4">
-                <div class="stats-values">({perblock} GODZ LP/block)</div>
-                <div class="stats-values">{totalstaked} GODZ LP staked</div>
+                  <div class="stats-values">({perblock} GODZ LP/block)</div>
+                  <div class="stats-values">{totalstaked} GODZ LP staked</div>
                 </div>
               )}
             </div>
@@ -721,10 +761,13 @@ const Dashboard = () => {
             <div class="d3">
               <h4 class="d3-child">Block: {rewardblock}</h4>
             </div>
-            <div class="d4">
-              <div class="stats-values">[ est {unlockTime} ]</div>
+
+            <div class="footers">
+              Expiration: <div class="stats-values"></div>
             </div>
-            <div class="footers">Expiration: {unlockTime} Seconds</div>
+            <div class="d4">
+              <div class="stats-values">[ est. {est} ]</div>
+            </div>
             <hr class="hr" />
             <div class="footers">EARNED :{rewards}</div>
             <div class="dashed_line">
