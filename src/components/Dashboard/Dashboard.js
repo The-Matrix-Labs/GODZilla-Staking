@@ -250,7 +250,7 @@ const Dashboard = () => {
         );
 
         var stakerBal = await stake_temp.stakers(signer.getAddress());
-        
+
         // setEst(time_temp.toDateString() + " " + time_temp.toLocaleTimeString());
         console.log("stakerInfo", stakerBal);
         // console.log(
@@ -258,8 +258,7 @@ const Dashboard = () => {
         //   ethers.utils.formatEther(stakerBal.amountStaked.toString())
         // );
         setStakedBal((stakerBal.amountStaked / 10 ** 9).toFixed(2).toString());
-        
-        
+
         var rewards = await stake_temp.calcHarvestTot(signer.getAddress());
         setRewards((rewards / 10 ** 9).toFixed(2).toString());
       } else {
@@ -311,10 +310,10 @@ const Dashboard = () => {
         var _poolInfo = await stake_temp.pool();
         const blockperday = 86400 / 3;
         const totaltokensstaked = Math.round(
-          (await _poolInfo.totalTokensStaked) / 10 ** 9
+          ethers.utils.formatUnits(await _poolInfo.totalTokensStaked, 9)
         ).toString();
         const perblocknumber = Math.round(
-          (await _poolInfo.perBlockNum) / 10 ** 9
+          ethers.utils.formatUnits(await _poolInfo.perBlockNum, 9)
         ).toString();
         const totaltokensstakedconverted =
           ethers.utils.formatEther(totaltokensstaked);
@@ -365,8 +364,8 @@ const Dashboard = () => {
         let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
         let stake_temp = new ethers.Contract(tokenaddr, erc20ABI, provider_);
         let balance = await stake_temp.balanceOf(signer.getAddress());
-        let balanceconverted = (balance / 10 ** 9).toFixed(2).toString();
-        setWalletAddressInfo(balanceconverted.toString());
+        let balanceconverted = ethers.utils.formatUnits(balance, 9);
+        setWalletAddressInfo(balanceconverted);
       } catch (err) {
         console.log(err.message);
       }
@@ -376,8 +375,9 @@ const Dashboard = () => {
         let provider_ = new ethers.providers.JsonRpcProvider(rpcUrl);
         let stake_temp = new ethers.Contract(tokenaddr, erc20ABI, provider_);
         let balance = await stake_temp.balanceOf(signer.getAddress());
-        let balanceconverted = (balance / 10 ** 18).toFixed(5).toString();
-        setWalletAddressInfo(balanceconverted.toString());
+        console.log(balance);
+        let balanceconverted = ethers.utils.formatEther(balance);
+        setWalletAddressInfo(balanceconverted);
       } catch (err) {
         console.log(err.message);
       }
@@ -395,6 +395,7 @@ const Dashboard = () => {
   }
 
   const Startswap = async () => {
+    console.log(ethers.utils.parseUnits(setstackamount.toString(), 9));
     if (
       setstackamount === 0 ||
       setstackamount === "0" ||
@@ -405,7 +406,7 @@ const Dashboard = () => {
       try {
         const stakeContract = new ethers.Contract(text, tokenabi, signer);
         let stackfunction = await stakeContract.stakeTokens(
-          (setstackamount - 1) * 10 ** 9,
+          ethers.utils.parseUnits(setstackamount.toString(), 9),
           ["1"]
         );
         await stackfunction.wait();
@@ -466,7 +467,7 @@ const Dashboard = () => {
         const erc20Contract = new ethers.Contract(tokenaddr, erc20ABI, signer);
         let stakeapproval = await erc20Contract.approve(
           text,
-          setstackamount * 10 ** 9
+          ethers.utils.parseUnits(setstackamount, 9)
         );
         await stakeapproval.wait();
         toast.success("Approved");
@@ -500,7 +501,7 @@ const Dashboard = () => {
       try {
         const stakeContract = new ethers.Contract(text, tokenabi, signer);
         let stackfunction = await stakeContract.unstakeTokens(
-          (setstackamount - 1) * 10 ** 9,
+          ethers.utils.parseUnits(setstackamount, 9),
           false
         );
         await stackfunction.wait();
@@ -666,11 +667,11 @@ const Dashboard = () => {
                 <div class="info-child2-left">Available</div>
                 {tokenaddr === "0xAe7Cf30E14E132E43689eBE4FAb49706c59A0bf7" ? (
                   <div class="info-child2-right">
-                    {walletAddressInfo || 0} GODZ
+                    {parseFloat(walletAddressInfo).toFixed(2) || 0} GODZ
                   </div>
                 ) : (
                   <div class="info-child2-right">
-                    {walletAddressInfo || 0} GODZ LP
+                    {parseFloat(walletAddressInfo).toFixed(4) || 0} GODZ LP
                   </div>
                 )}
               </div>
